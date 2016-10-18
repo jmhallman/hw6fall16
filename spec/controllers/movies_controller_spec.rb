@@ -20,5 +20,30 @@ describe MoviesController do
       post :search_tmdb, {:search_terms => 'Ted'}
       expect(assigns(:movies)).to eq(fake_results)
     end 
+    it 'should look for invalid search terms and post a flash message for user' do
+      fake_results = [double('Movie1'), double('Movie2')]
+      allow(Movie).to receive(:find_in_tmdb).and_return (fake_results)
+      post :search_tmdb, {:search_terms => ''}
+      expect(flash[:notice]).to eq("Invalid Search Terms")
+    end 
+    it 'should post a flash message to user notifying no movie matches' do
+      post :search_tmdb, {:search_terms => 'strudxfcglh;kggljk'}
+      allow(Movie).to receive(:find_in_tmdb).and_return([])
+      expect(response).to redirect_to(movies_path)
+      expect(flash[:notice]).to eq("No matching movies were found on TMDb")
+    end
+  end
+  describe 'adding from TMDb' do
+    it 'should post a flash message to the user if no movies were selected' do
+      post :add_tmdb, {:tmdb_movies => nil}
+      expect(response).to redirect_to(movies_path)
+      expect(flash[:notice]).to eq("No movies selected")
+    end 
+    it 'should post a flash message to the user if movies are added' do
+      expect(Movie).to receive(:create_from_tmdb).with("Lethal Weapon")
+      post :add_tmdb, {:tmdb_movies => {"Lethal Weapon": "1"}}
+      expect(response).to redirect_to(movies_path)
+      expect(flash[:notice]).to eq("Movies successfully added to Rotten Potatoes")
+    end 
   end
 end
